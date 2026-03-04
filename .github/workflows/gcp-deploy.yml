@@ -1,0 +1,26 @@
+name: Deploy to Cloud Run
+on:
+  push:
+    branches: [ main ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Google Auth
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: protean-brook-461307-b8
+    - name: Configure Docker
+      run: gcloud auth configure-docker --quiet
+    - name: Build and Push
+      run: |
+        docker build -t gcr.io/protean-brook-461307-b8/genesis-oneclick-test-1772650588508:${{ github.sha }} .
+        docker push gcr.io/protean-brook-461307-b8/genesis-oneclick-test-1772650588508:${{ github.sha }}
+    - name: Deploy
+      run: |
+        gcloud run deploy genesis-oneclick-test-1772650588508 --image gcr.io/protean-brook-461307-b8/genesis-oneclick-test-1772650588508:${{ github.sha }} --region us-central1 --platform managed --allow-unauthenticated --port 8080 --quiet
